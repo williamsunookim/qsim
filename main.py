@@ -7,6 +7,14 @@ app = Flask(__name__)
 # 전역적으로 사용할 양자 시뮬레이터 인스턴스
 simulator = None
 
+def apply_round_to_all_elements(arr):
+    if isinstance(arr, list):
+        # 배열(리스트)일 경우 재귀적으로 각 요소에 대해 함수를 호출
+        return [apply_round_to_all_elements(elem) for elem in arr]
+    else:
+        # 숫자일 경우 round 함수를 적용
+        return round(arr)
+
 @app.route('/')
 def index():
     return render_template('index.html')  # 메인 페이지 렌더링
@@ -44,6 +52,7 @@ def apply_gate():
     
     # 현재 전체 큐비트 상태 반환
     qubits_state = [simulator.get_state(i).tolist() for i in range(simulator.n)]
+
     print(jsonify({'qubits_state': qubits_state}))
     return jsonify({'qubits_state': qubits_state})
 

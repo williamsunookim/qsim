@@ -254,6 +254,7 @@
         }
 
         // 회로 업데이트 함수
+        // 회로 업데이트 함수
         function updateCircuit(gate, qubit, data, qubitsState) {
             var gateLabel = {
                 hadamard: "H",
@@ -270,33 +271,20 @@
             var containerWidth = $('.line').width();  // 가로선의 길이
             var gateSpacing = containerWidth / (maxGates + 1);  // 게이트 간격 계산
 
-            // 기존 동그라미 위치 업데이트
-            updateAllCircles(qubit, gateSpacing);
-
-            // 모든 큐비트에 동일한 간격으로 게이트가 추가되도록 기존 게이트들의 위치를 재조정
-            for (var i = 0; i < qubitCount; i++) {
-                var numGates = gatePositions[i].length;
-                for (var j = 0; j < numGates; j++) {
-                    var newLeft = (j + 1) * gateSpacing + 90;  // 각 게이트의 새로운 위치 계산
-                    $('#qubit-row-' + i + ' .gate').eq(j).css('left', newLeft + 'px');
-                }
-            }
+            // 모든 게이트와 동그라미 위치 업데이트
+            updateAllCirclesAndGates();
 
             // 새로운 게이트를 추가할 위치 계산
-            var newGatePosition = maxGates * gateSpacing + 90;
-
-            // 이전 게이트의 위치 계산 (없으면 null)
-            var prevGatePosition = (gatePositions[qubit].length > 0) ? (gatePositions[qubit].length * gateSpacing + 90) : 0;
+            var newGatePosition = (gatePositions[qubit].length + 1) * gateSpacing + 90;
 
             // 새 게이트 추가
             $('#qubit-row-' + qubit).append('<span class="gate" style="left: ' + newGatePosition + 'px;">' + gateLabel[gate] + '</span>');
             gatePositions[qubit].push(gate);  // 해당 큐비트의 게이트 목록에 추가
 
-            // 게이트 사이에 동그라미 추가 (이전 게이트가 있으면 그 사이에 동그라미)
-            var isLastGate = (gatePositions[qubit].length === maxGates);  // 마지막 게이트 여부
-            addCircle(qubit, qubitsState[qubit][0], qubitsState[qubit][1], prevGatePosition, newGatePosition, isLastGate, gateSpacing);
+            // 게이트 오른쪽에 동그라미 추가
+            addCircle(qubit, qubitsState[qubit][0], qubitsState[qubit][1], newGatePosition);
 
-            // SWAP 게이트 처리 (기존 로직 유지)
+            // SWAP 게이트 처리
             if (gate === 'swap') {
                 var targetQubit = data['target_qubit'];
 
@@ -307,7 +295,7 @@
                 gatePositions[targetQubit].push(gate);
             }
 
-            // CNOT 게이트 처리 (기존 로직 유지)
+            // CNOT 게이트 처리
             if (gate === 'cnot') {
                 var controlQubit = data['control_qubit'];
                 var targetQubit = data['qubit'];
@@ -319,9 +307,44 @@
                 gatePositions[targetQubit].push(gate);
             }
 
-            // 게이트 위치를 동기화해 빈 공간을 추가
+            // 게이트 위치 동기화 및 동그라미 위치 업데이트
             synchronizeGatePositions();
+            updateAllCirclesAndGates();
         }
+
+        // 기존 모든 동그라미 위치 업데이트 함수
+        // 기존 모든 동그라미 위치 업데이트 함수
+        function updateAllCirclesAndGates() {
+            var maxGates = Math.max(...Object.values(gatePositions).map(gates => gates.length));
+            var containerWidth = $('.line').width();  // 가로선의 길이
+            var gateSpacing = containerWidth / (maxGates + 1);  // 게이트 간격 계산
+
+            // 모든 큐빗에 대해 게이트 위치와 동그라미를 업데이트
+            for (var i = 0; i < qubitCount; i++) {
+                var numGates = gatePositions[i].length;
+                var nonHiddenGateIndex = 0;  // 실제(non-hidden) 게이트의 인덱스
+                var hiddengatecnt = 0;
+
+                // 게이트 위치 업데이트
+                for (var j = 0; j < numGates; j++) {
+                    if (gatePositions[i][j] == null) {
+                        $('#qubit-row-' + i + ' .gate').eq(j).css('left', newLeft + 'px');
+                        hiddengatecnt ++;
+                    }
+                    if (gatePositions[i][j] !== null) {  // 실제(non-hidden) 게이트만 처리
+                        var newLeft = (nonHiddenGateIndex + hiddengatecnt + 1) * gateSpacing + 90;  // 실제(non-hidden) 게이트의 위치 계산
+                        $('#qubit-row-' + i + ' .gate').eq(j).css('left', newLeft + 'px');
+                        
+                        // 해당 실제 게이트의 오른쪽에 동그라미 배치
+                        var circlePosition = newLeft + 40; // 게이트 크기 + 약간의 간격
+                        $('#qubit-row-' + i + ' .circle').eq(nonHiddenGateIndex).css('left', circlePosition + 'px');
+
+                        nonHiddenGateIndex++;  // 실제 게이트 인덱스만 증가
+                    }
+                }
+            }
+        }
+
 
 
 
